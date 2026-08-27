@@ -1,4 +1,4 @@
-# Security Incident Management System Screenshots
+# Soc Incident Management System Screenshots
 
 This folder contains screenshots demonstrating:
 - Incident creation
