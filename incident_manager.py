@@ -1,10 +1,29 @@
 import json
 from datetime import datetime
 
+INCIDENTS_FILE = "incidents.json"
 
-# =========================
-# Priority Engine
-# =========================
+
+# -------------------------
+# FILE FUNCTIONS
+# -------------------------
+
+def load_incidents():
+    try:
+        with open(INCIDENTS_FILE, "r") as file:
+            return json.load(file)
+    except:
+        return []
+
+
+def save_incidents(incidents):
+    with open(INCIDENTS_FILE, "w") as file:
+        json.dump(incidents, file, indent=4)
+
+
+# -------------------------
+# PRIORITY & RISK ENGINE
+# -------------------------
 
 def calculate_priority(severity):
 
@@ -19,172 +38,158 @@ def calculate_priority(severity):
     elif severity == "medium":
         return "P3"
 
-    else:
-        return "P4"
+    return "P4"
 
 
-# =========================
-# Incident ID Generator
-# =========================
+def get_recommendation(severity):
 
-def get_next_incident_id():
+    severity = severity.lower()
 
-    try:
+    recommendations = {
+        "critical": "Immediate Containment Required",
+        "high": "Start Investigation Immediately",
+        "medium": "Review and Monitor",
+        "low": "Continue Monitoring"
+    }
 
-        with open("incidents.json", "r") as file:
-
-            incidents = json.load(file)
-
-            return f"INC-{1001 + len(incidents)}"
-
-    except:
-
-        return "INC-1001"
+    return recommendations.get(
+        severity,
+        "No Recommendation"
+    )
 
 
-# =========================
-# Add Incident
-# =========================
+# -------------------------
+# ADD INCIDENT
+# -------------------------
 
-def create_incident():
+def add_incident():
+
+    incidents = load_incidents()
 
     incident_type = input("Incident Type: ")
 
     severity = input(
-        "Severity (Critical/High/Medium/Low): ")
+        "Severity (Critical/High/Medium/Low): "
+    )
 
-    description = input("Description: ")
+    description = input(
+        "Description: "
+    )
+
+    incident_id = f"INC-{1001 + len(incidents)}"
 
     incident = {
 
-        "id": get_next_incident_id(),
+        "id": incident_id,
 
         "type": incident_type,
 
         "severity": severity.title(),
 
-        "priority": calculate_priority(severity),
+        "priority": calculate_priority(
+            severity
+        ),
 
         "status": "Open",
 
         "description": description,
 
-        "created_at": str(datetime.now())
+        "risk_level": severity.title(),
+
+        "recommendation": get_recommendation(
+            severity
+        ),
+
+        "created_at": str(
+            datetime.now()
+        ),
+
+        "updated_at": None
     }
 
-    try:
+    incidents.append(
+        incident
+    )
 
-        with open("incidents.json", "r") as file:
-
-            incidents = json.load(file)
-
-    except:
-
-        incidents = []
-
-    incidents.append(incident)
-
-    with open("incidents.json", "w") as file:
-
-        json.dump(incidents, file, indent=4)
+    save_incidents(
+        incidents
+    )
 
     print("\nINCIDENT SAVED SUCCESSFULLY")
 
+    for key, value in incident.items():
+        print(f"{key}: {value}")
 
-# =========================
-# View Incidents
-# =========================
+
+# -------------------------
+# VIEW INCIDENTS
+# -------------------------
 
 def view_incidents():
 
-    try:
+    incidents = load_incidents()
 
-        with open("incidents.json", "r") as file:
-
-            incidents = json.load(file)
-
-    except:
-
-        incidents = []
-
-    print("\nALL INCIDENTS")
-    print("=" * 50)
+    if not incidents:
+        print("\nNo Incidents Found")
+        return
 
     for incident in incidents:
 
-        print(f"\nID: {incident['id']}")
-        print(f"Type: {incident['type']}")
-        print(f"Severity: {incident['severity']}")
-        print(f"Priority: {incident['priority']}")
-        print(f"Status: {incident['status']}")
-        print("-" * 50)
+        print("\n" + "=" * 50)
+
+        for key, value in incident.items():
+            print(f"{key}: {value}")
+
+        print("=" * 50)
 
 
-# =========================
-# Search Incident
-# =========================
+# -------------------------
+# SEARCH INCIDENT
+# -------------------------
 
 def search_incident():
 
-    incident_id = input("Enter Incident ID: ")
+    incident_id = input(
+        "Enter Incident ID: "
+    )
 
-    try:
-
-        with open("incidents.json", "r") as file:
-
-            incidents = json.load(file)
-
-    except:
-
-        incidents = []
-
-    found = False
+    incidents = load_incidents()
 
     for incident in incidents:
 
         if incident["id"] == incident_id:
 
             print("\nINCIDENT FOUND")
+
             print("=" * 50)
 
             for key, value in incident.items():
-
                 print(f"{key}: {value}")
 
-            found = True
+            return
 
-            break
-
-    if not found:
-
-        print("\nIncident Not Found")
+    print("\nIncident Not Found")
 
 
-# =========================
-# Update Status
-# =========================
+# -------------------------
+# UPDATE STATUS
+# -------------------------
 
 def update_status():
 
-    incident_id = input("Enter Incident ID: ")
+    incident_id = input(
+        "Enter Incident ID: "
+    )
 
-    try:
-
-        with open("incidents.json", "r") as file:
-
-            incidents = json.load(file)
-
-    except:
-
-        incidents = []
-
-    updated = False
+    incidents = load_incidents()
 
     for incident in incidents:
 
         if incident["id"] == incident_id:
 
-            print("\nCurrent Status:", incident["status"])
+            print(
+                f"\nCurrent Status: {incident['status']}"
+            )
 
             new_status = input(
                 "New Status (Open/Investigating/Resolved/Closed): "
@@ -192,129 +197,277 @@ def update_status():
 
             incident["status"] = new_status
 
-            updated = True
+            incident["updated_at"] = str(
+                datetime.now()
+            )
 
-            break
+            save_incidents(
+                incidents
+            )
 
-    if updated:
+            print(
+                "\nStatus Updated Successfully"
+            )
 
-        with open("incidents.json", "w") as file:
+            return
 
-            json.dump(incidents, file, indent=4)
-
-        print("\nStatus Updated Successfully")
-
-    else:
-
-        print("\nIncident Not Found")
+    print("Incident Not Found")
 
 
-# =========================
-# Dashboard
-# =========================
+# -------------------------
+# DELETE INCIDENT
+# -------------------------
+
+def delete_incident():
+
+    incident_id = input(
+        "Enter Incident ID: "
+    )
+
+    incidents = load_incidents()
+
+    for incident in incidents:
+
+        if incident["id"] == incident_id:
+            incidents.remove(
+                incident
+            )
+
+            save_incidents(
+                incidents
+            )
+
+            print(
+                "\nIncident Deleted Successfully"
+            )
+
+            return
+
+    print(
+        "\nIncident Not Found"
+    )
+
+
+# -------------------------
+# DASHBOARD
+# -------------------------
 
 def dashboard():
 
-    try:
+    incidents = load_incidents()
 
-        with open("incidents.json", "r") as file:
+    total = len(
+        incidents
+    )
 
-            incidents = json.load(file)
-
-    except:
-
-        incidents = []
-
-    total = len(incidents)
+    open_count = 0
+    investigating_count = 0
+    resolved_count = 0
+    closed_count = 0
 
     critical = 0
     high = 0
     medium = 0
     low = 0
 
-    open_incidents = 0
-    resolved = 0
+    for incident in incidents:
+
+        status = incident[
+            "status"
+        ]
+
+        severity = incident[
+            "severity"
+        ]
+
+        if status == "Open":
+            open_count += 1
+
+        elif status == "Investigating":
+            investigating_count += 1
+
+        elif status == "Resolved":
+            resolved_count += 1
+
+        elif status == "Closed":
+            closed_count += 1
+
+        if severity == "Critical":
+            critical += 1
+
+        elif severity == "High":
+            high += 1
+
+        elif severity == "Medium":
+            medium += 1
+
+        elif severity == "Low":
+            low += 1
+
+    print("\nSOC INCIDENT DASHBOARD")
+
+    print("=" * 60)
+
+    print(
+        f"Total Incidents : {total}"
+    )
+
+    print("\nStatus Summary")
+
+    print("-" * 60)
+
+    print(
+        f"Open          : {open_count}"
+    )
+
+    print(
+        f"Investigating : {investigating_count}"
+    )
+
+    print(
+        f"Resolved      : {resolved_count}"
+    )
+
+    print(
+        f"Closed        : {closed_count}"
+    )
+
+    print("\nSeverity Summary")
+
+    print("-" * 60)
+
+    print(
+        f"Critical      : {critical}"
+    )
+
+    print(
+        f"High          : {high}"
+    )
+
+    print(
+        f"Medium        : {medium}"
+    )
+
+    print(
+        f"Low           : {low}"
+    )
+
+    print("=" * 60)
+
+
+# -------------------------
+# REPORTS
+# -------------------------
+
+def generate_reports():
+
+    incidents = load_incidents()
+
+    report = []
+
+    report.append(
+        "SOC SECURITY REPORT"
+    )
+
+    report.append("=" * 60)
+
+    report.append(
+        f"Generated: {datetime.now()}"
+    )
+
+    report.append("=" * 60)
 
     for incident in incidents:
 
-        if incident["severity"] == "Critical":
-            critical += 1
-        elif incident["severity"] == "High":
-            high += 1
+        report.append("")
 
-        elif incident["severity"] == "Medium":
-            medium += 1
+        for key, value in incident.items():
 
-        elif incident["severity"] == "Low":
-            low += 1
+            report.append(
+                f"{key}: {value}"
+            )
 
-        if incident["status"] == "Open":
-            open_incidents += 1
+    with open(
+        "security_report.txt",
+        "w"
+    ) as file:
 
-        if incident["status"] == "Resolved":
-            resolved += 1
+        file.write(
+            "\n".join(report)
+        )
 
-    print("\nSOC INCIDENT DASHBOARD")
-    print("=" * 50)
+    with open(
+        "security_report.json",
+        "w"
+    ) as file:
 
-    print("Total Incidents :", total)
+        json.dump(
+            incidents,
+            file,
+            indent=4
+        )
 
-    print("\nOpen Incidents :", open_incidents)
-    print("Resolved       :", resolved)
-
-    print("\nCritical :", critical)
-    print("High     :", high)
-    print("Medium   :", medium)
-    print("Low      :", low)
-
-    print("=" * 50)
+    print(
+        "\nReports Generated Successfully"
+    )
 
 
-# =========================
-# Main Menu
-# =========================
+# -------------------------
+# MAIN MENU
+# -------------------------
 
 while True:
 
     print("\nSOC INCIDENT MANAGEMENT SYSTEM")
-    print("=" * 50)
+
+    print("=" * 60)
 
     print("1. Add Incident")
     print("2. View Incidents")
     print("3. Search Incident")
     print("4. Update Status")
-    print("5. Dashboard")
-    print("6. Exit")
+    print("5. Delete Incident")
+    print("6. Dashboard")
+    print("7. Generate Reports")
+    print("8. Exit")
 
-    print("=" * 50)
+    print("=" * 60)
 
-    choice = input("Choose Option: ")
+    choice = input(
+        "Choose Option: "
+    )
 
     if choice == "1":
-
-        create_incident()
+        add_incident()
 
     elif choice == "2":
-
         view_incidents()
 
     elif choice == "3":
-
         search_incident()
 
     elif choice == "4":
-
         update_status()
 
     elif choice == "5":
-
-        dashboard()
+        delete_incident()
 
     elif choice == "6":
+        dashboard()
 
-        print("Exiting System...")
+    elif choice == "7":
+        generate_reports()
+
+    elif choice == "8":
+
+        print(
+            "\nExiting System..."
+        )
+
         break
 
     else:
 
-        print("Invalid Option")
+        print(
+            "\nInvalid Option"
+        )
