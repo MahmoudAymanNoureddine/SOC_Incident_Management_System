@@ -89,11 +89,6 @@ def create_incident():
         json.dump(incidents, file, indent=4)
 
     print("\nINCIDENT SAVED SUCCESSFULLY")
-    print("=" * 50)
-
-    for key, value in incident.items():
-
-        print(f"{key}: {value}")
 
 
 # =========================
@@ -115,11 +110,6 @@ def view_incidents():
     print("\nALL INCIDENTS")
     print("=" * 50)
 
-    if len(incidents) == 0:
-
-        print("No incidents found.")
-        return
-
     for incident in incidents:
 
         print(f"\nID: {incident['id']}")
@@ -128,6 +118,95 @@ def view_incidents():
         print(f"Priority: {incident['priority']}")
         print(f"Status: {incident['status']}")
         print("-" * 50)
+
+
+# =========================
+# Search Incident
+# =========================
+
+def search_incident():
+
+    incident_id = input("Enter Incident ID: ")
+
+    try:
+
+        with open("incidents.json", "r") as file:
+
+            incidents = json.load(file)
+
+    except:
+
+        incidents = []
+
+    found = False
+
+    for incident in incidents:
+
+        if incident["id"] == incident_id:
+
+            print("\nINCIDENT FOUND")
+            print("=" * 50)
+
+            for key, value in incident.items():
+
+                print(f"{key}: {value}")
+
+            found = True
+
+            break
+
+    if not found:
+
+        print("\nIncident Not Found")
+
+
+# =========================
+# Update Status
+# =========================
+
+def update_status():
+
+    incident_id = input("Enter Incident ID: ")
+
+    try:
+
+        with open("incidents.json", "r") as file:
+
+            incidents = json.load(file)
+
+    except:
+
+        incidents = []
+
+    updated = False
+
+    for incident in incidents:
+
+        if incident["id"] == incident_id:
+
+            print("\nCurrent Status:", incident["status"])
+
+            new_status = input(
+                "New Status (Open/Investigating/Resolved/Closed): "
+            )
+
+            incident["status"] = new_status
+
+            updated = True
+
+            break
+
+    if updated:
+
+        with open("incidents.json", "w") as file:
+
+            json.dump(incidents, file, indent=4)
+
+        print("\nStatus Updated Successfully")
+
+    else:
+
+        print("\nIncident Not Found")
 
 
 # =========================
@@ -154,12 +233,12 @@ def dashboard():
     low = 0
 
     open_incidents = 0
+    resolved = 0
 
     for incident in incidents:
 
         if incident["severity"] == "Critical":
             critical += 1
-
         elif incident["severity"] == "High":
             high += 1
 
@@ -172,12 +251,16 @@ def dashboard():
         if incident["status"] == "Open":
             open_incidents += 1
 
+        if incident["status"] == "Resolved":
+            resolved += 1
+
     print("\nSOC INCIDENT DASHBOARD")
     print("=" * 50)
 
     print("Total Incidents :", total)
 
     print("\nOpen Incidents :", open_incidents)
+    print("Resolved       :", resolved)
 
     print("\nCritical :", critical)
     print("High     :", high)
@@ -194,13 +277,14 @@ def dashboard():
 while True:
 
     print("\nSOC INCIDENT MANAGEMENT SYSTEM")
-
     print("=" * 50)
 
     print("1. Add Incident")
     print("2. View Incidents")
-    print("3. Dashboard")
-    print("4. Exit")
+    print("3. Search Incident")
+    print("4. Update Status")
+    print("5. Dashboard")
+    print("6. Exit")
 
     print("=" * 50)
 
@@ -216,9 +300,17 @@ while True:
 
     elif choice == "3":
 
-        dashboard()
+        search_incident()
 
     elif choice == "4":
+
+        update_status()
+
+    elif choice == "5":
+
+        dashboard()
+
+    elif choice == "6":
 
         print("Exiting System...")
         break
